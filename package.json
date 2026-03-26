@@ -6,9 +6,11 @@
     "import:randa": "node scripts/import-randa.mjs",
     "export:vault": "node scripts/export-vault.mjs",
     "build:site": "npm run import:randa && npm run export:vault",
-    "serve:site": "node scripts/serve-site.mjs"
+    "serve:site": "node scripts/serve-site.mjs",
+    "tui": "node scripts/run-tui.mjs"
   },
   "dependencies": {
+    "blessed": "^0.1.81",
     "jsdom": "^27.0.0",
     "marked": "^17.0.5",
     "turndown": "^7.2.2"

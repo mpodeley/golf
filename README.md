@@ -56,6 +56,7 @@ Ya existe un MVP navegable en `site/`:
 1. `npm run import:randa`
 2. `npm run export:vault`
 3. `npm run serve:site`
+4. `npm run tui`
 
 Esto genera un browser terminal web con:
 
@@ -67,6 +68,20 @@ Esto genera un browser terminal web con:
 - tabla de contenidos
 
 El dataset exportado queda en `site/data/`.
+
+Tambien hay un browser de terminal real:
+
+```bash
+npm run tui
+```
+
+Atajos principales:
+
+- `tab`: cambiar foco entre paneles
+- `/`: buscar
+- `1/2/3/4`: cambiar tipo
+- `l/b/t`: links, backlinks, toc
+- `q`: salir
 
 ## GitHub Pages
 
