@@ -7,6 +7,7 @@
     "export:vault": "node scripts/export-vault.mjs",
     "copy:site-vendor": "node scripts/copy-site-vendor.mjs",
     "build:site": "npm run import:randa && npm run export:vault && npm run copy:site-vendor",
+    "build:pages": "npm run export:vault && npm run copy:site-vendor",
     "serve:site": "node scripts/serve-site.mjs",
     "tui": "node scripts/run-tui.mjs"
   },
