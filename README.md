@@ -101,6 +101,8 @@ El browser web ahora tiene dos modos:
 - `vault`: navegador de reglas
 - `play`: aventura interactiva "Tu Primera Vuelta"
 
+El sitio ahora abre directo en `play`.
+
 En `play`:
 
 - click o `enter` para elegir opciones
@@ -108,6 +110,8 @@ En `play`:
 - `v` vuelve al vault
 - `r` reinicia la aventura
 - `tab` cambia foco entre scorecard, escena y opciones
+- la historia y el ASCII art van arriba
+- las opciones aparecen abajo en una franja horizontal estilo terminal
 
 La aventura actual cubre prologo + 3 hoyos y trackea:
 

@@ -2,6 +2,7 @@ import { Terminal } from './vendor/xterm.mjs';
 import { FitAddon } from './vendor/addon-fit.mjs';
 import {
   createGameState,
+  getGameArtLines,
   getGameBodyLines,
   getGameChoiceItems,
   getGameScene,
@@ -18,10 +19,10 @@ const terminalElement = document.getElementById('terminal');
 const interactiveZones = [];
 
 const state = {
-  mode: 'library',
+  mode: 'play',
   query: '',
   kind: 'all',
-  focus: 'list',
+  focus: 'side',
   selectedIndex: 0,
   currentNoteId: notes[0]?.id ?? '',
   sideMode: 'links',
@@ -35,6 +36,7 @@ const state = {
 const terminal = new Terminal({
   convertEol: true,
   cursorBlink: true,
+  cursorStyle: 'block',
   fontFamily: '"IBM Plex Mono", "Cascadia Code", monospace',
   fontSize: 16,
   theme: {
@@ -366,45 +368,95 @@ function drawBox(width, height, title, bodyLines, selectedIndex = -1, focus = fa
   return lines.slice(0, height);
 }
 
+function makePlayOptionLines(items, width, selectedIndex) {
+  const innerWidth = Math.max(10, width);
+  const lines = [];
+  const zones = [];
+  let currentLine = '';
+  let currentLength = 0;
+  let currentRow = 0;
+
+  for (let index = 0; index < items.length; index += 1) {
+    const item = items[index];
+    const selected = index === selectedIndex;
+    const token = `${selected ? '>_' : '  '} ${item.label}`;
+    const separator = currentLength === 0 ? '' : '   ';
+    const nextLength = currentLength + separator.length + token.length;
+
+    if (currentLength !== 0 && nextLength > innerWidth) {
+      lines.push(pad(currentLine, innerWidth));
+      currentLine = token;
+      currentLength = token.length;
+      currentRow += 1;
+      zones.push({
+        index,
+        row: currentRow,
+        x1: 0,
+        x2: token.length,
+      });
+      continue;
+    }
+
+    const start = currentLength + separator.length;
+    currentLine += `${separator}${token}`;
+    currentLength += separator.length + token.length;
+    zones.push({
+      index,
+      row: currentRow,
+      x1: start,
+      x2: start + token.length,
+    });
+  }
+
+  if (currentLine || !lines.length) {
+    lines.push(pad(currentLine, innerWidth));
+  }
+
+  return { lines, zones };
+}
+
 function render() {
   const { cols, leftWidth, rightWidth, centerWidth, mainHeight, mainTop } = getLayout();
   interactiveZones.length = 0;
 
   if (state.mode === 'play') {
     const scene = getGameScene(state.game);
-    const sidebarLines = getGameSidebarLines(state.game);
-    const contentLines = wrapText(getGameBodyLines(state.game).join('\n'), centerWidth - 2);
-    const maxGameScroll = Math.max(0, contentLines.length - (mainHeight - 2));
+    const optionHeight = Math.min(8, Math.max(6, Math.floor(mainHeight * 0.28)));
+    const topHeight = mainHeight - optionHeight;
+    const textWidth = Math.max(44, Math.floor(cols * 0.62));
+    const artWidth = Math.max(26, cols - textWidth);
+    const contentLines = wrapText(getGameBodyLines(state.game).join('\n'), textWidth - 2);
+    const maxGameScroll = Math.max(0, contentLines.length - (topHeight - 2));
     state.game.contentScroll = Math.max(0, Math.min(maxGameScroll, state.game.contentScroll));
     const visibleContentLines = contentLines.slice(
       state.game.contentScroll,
-      state.game.contentScroll + mainHeight - 2,
+      state.game.contentScroll + topHeight - 2,
     );
     const choiceItems = playChoiceItems();
-    const choiceLines = choiceItems.map((item, index) => `${String.fromCharCode(65 + index)} ${item.label}`);
-
-    const leftBox = drawBox(
-      leftWidth,
-      mainHeight,
-      'CARD',
-      sidebarLines,
+    const artLines = [...getGameArtLines(state.game), '', ...getGameSidebarLines(state.game)];
+    const artBox = drawBox(
+      artWidth,
+      topHeight,
+      `HUD H${scene.hole}`,
+      artLines,
       -1,
       state.focus === 'list',
     );
     const contentBox = drawBox(
-      centerWidth,
-      mainHeight,
+      textWidth,
+      topHeight,
       scene.title.toUpperCase(),
       visibleContentLines,
       -1,
       state.focus === 'content',
     );
-    const sideBox = drawBox(
-      rightWidth,
-      mainHeight,
-      state.game.feedback ? 'RESULT' : 'OPTIONS',
-      choiceLines.length ? choiceLines : ['Sin opciones'],
-      state.focus === 'side' ? state.game.choiceIndex : -1,
+    const optionLayout = makePlayOptionLines(choiceItems, cols - 2, state.game.choiceIndex);
+    const optionsBox = drawBox(
+      cols,
+      optionHeight,
+      state.game.feedback ? 'CONTINUE' : 'COMMAND',
+      optionLayout.lines.length ? optionLayout.lines : [pad('Sin opciones', cols - 2)],
+      -1,
       state.focus === 'side',
     );
 
@@ -450,41 +502,41 @@ function render() {
 
     addInteractiveZone({
       x1: 0,
-      x2: leftWidth,
+      x2: textWidth,
       y1: mainTop,
-      y2: mainTop + mainHeight,
-      onClick: () => {
-        state.focus = 'list';
-      },
-    });
-    addInteractiveZone({
-      x1: leftWidth,
-      x2: leftWidth + centerWidth,
-      y1: mainTop,
-      y2: mainTop + mainHeight,
+      y2: mainTop + topHeight,
       onClick: () => {
         state.focus = 'content';
       },
     });
     addInteractiveZone({
-      x1: leftWidth + centerWidth,
+      x1: textWidth,
       x2: cols,
       y1: mainTop,
+      y2: mainTop + topHeight,
+      onClick: () => {
+        state.focus = 'list';
+      },
+    });
+    addInteractiveZone({
+      x1: 0,
+      x2: cols,
+      y1: mainTop + topHeight,
       y2: mainTop + mainHeight,
       onClick: () => {
         state.focus = 'side';
       },
     });
 
-    for (let index = 0; index < Math.min(choiceLines.length, mainHeight - 2); index += 1) {
+    for (const zone of optionLayout.zones) {
       addInteractiveZone({
-        x1: leftWidth + centerWidth + 1,
-        x2: Math.max(leftWidth + centerWidth + 1, cols - 1),
-        y1: mainTop + 1 + index,
-        y2: mainTop + 2 + index,
+        x1: 1 + zone.x1,
+        x2: 1 + zone.x2,
+        y1: mainTop + topHeight + 1 + zone.row,
+        y2: mainTop + topHeight + 2 + zone.row,
         onClick: () => {
-          state.game.choiceIndex = index;
-          activatePlayChoice(index);
+          state.game.choiceIndex = zone.index;
+          activatePlayChoice(zone.index);
         },
       });
     }
@@ -492,8 +544,11 @@ function render() {
     const frame = [];
     frame.push(`\x1b[38;2;215;255;137m${header}\x1b[0m`);
     frame.push(toolbar.join(''));
-    for (let row = 0; row < mainHeight; row += 1) {
-      frame.push(`${leftBox[row] ?? ''}${contentBox[row] ?? ''}${sideBox[row] ?? ''}`);
+    for (let row = 0; row < topHeight; row += 1) {
+      frame.push(`${contentBox[row] ?? ''}${artBox[row] ?? ''}`);
+    }
+    for (let row = 0; row < optionHeight; row += 1) {
+      frame.push(optionsBox[row] ?? '');
     }
     frame.push(`\x1b[38;2;111;168;131m${pad(getGameStatus(state.game), cols)}\x1b[0m`);
     frame.push(`\x1b[38;2;111;168;131m${pad('Tu Primera Vuelta | click o teclado para elegir', cols)}\x1b[0m`);
@@ -983,12 +1038,26 @@ terminalElement.addEventListener(
       return;
     }
 
-    const { leftWidth, centerWidth, mainTop, mainHeight } = getLayout();
-    const overContent =
-      cell.row >= mainTop &&
-      cell.row < mainTop + mainHeight &&
-      cell.col >= leftWidth &&
-      cell.col < leftWidth + centerWidth;
+    const { cols, mainTop, mainHeight } = getLayout();
+    let overContent = false;
+
+    if (state.mode === 'play') {
+      const optionHeight = Math.min(8, Math.max(6, Math.floor(mainHeight * 0.28)));
+      const topHeight = mainHeight - optionHeight;
+      const textWidth = Math.max(44, Math.floor(cols * 0.62));
+      overContent =
+        cell.row >= mainTop &&
+        cell.row < mainTop + topHeight &&
+        cell.col >= 0 &&
+        cell.col < textWidth;
+    } else {
+      const { leftWidth, centerWidth } = getLayout();
+      overContent =
+        cell.row >= mainTop &&
+        cell.row < mainTop + mainHeight &&
+        cell.col >= leftWidth &&
+        cell.col < leftWidth + centerWidth;
+    }
 
     if (!overContent) {
       return;

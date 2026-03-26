@@ -32,6 +32,86 @@ const TITLE_ART = [
   '                     Tu Primera Vuelta - aventura de reglas',
 ];
 
+const SCENE_ART = {
+  intro: [
+    '        .-=========-.',
+    "        \\'-=======-'/",
+    '        _|   .=.   |_',
+    '       ((|  {{1}}  |))',
+    "        \\|   /|\\   |/",
+    "         \\__ '`' __/",
+    "           _`) (`_",
+    "         _/_______\\_",
+    "        /___________\\",
+  ],
+  parking: [
+    '      _____________________',
+    ' ___ /|_||_||_||_||_||_||_|',
+    '|   _                     |',
+    "'-=(o)-----------------(o)-'",
+    '',
+    '   ||  /| /| /| /| /|  ||',
+    '   || /_|/_|/_|/_|/_|\\ ||',
+  ],
+  card: [
+    '   .--------------------.',
+    '   | LOS ROBLES G.C.    |',
+    '   | H1 PAR4   H2 PAR3  |',
+    '   | H3 PAR5            |',
+    "   '--------------------'",
+  ],
+  tee: [
+    '           o',
+    '          /|\\',
+    '          / \\',
+    '',
+    '      ____|____',
+    '---- /   TEE   \\ ----',
+    '    /___________\\',
+    '',
+    '   ||           ||',
+    '   ||    OB     ||',
+  ],
+  water: [
+    ' ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ',
+    '~   __      __      ~ ~',
+    ' ~ /  \\____/  \\___  ~ ~',
+    '~  \\__/    \\__/   \\ ~ ~',
+    ' ~       GREEN      ~ ~',
+    '~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~',
+  ],
+  bunker: [
+    '        ____________',
+    '     .-\'            `-.',
+    '   .\'    .-""""-.      `.',
+    '  /    /  sand   \\       \\',
+    ' ;    ;           ;      ;',
+    ' |    |           |      |',
+    ' ;    ;           ;      ;',
+    '  \\    \\         /      /',
+    "   `.    `-.__.-'    .'",
+    "     `-._        _.-'",
+  ],
+  trees: [
+    '      &&& &&  & &&',
+    '   && &\\/&\\|& ()|/ @, &&',
+    '   &\\/(/&/&||/& /_/)_&/_&',
+    ' &() &\\/&|()|/&\\/ \'% & ()',
+    ' &_\\_&&_\\ |& |&&/&__%_/_&',
+    '&&   && & &| &| /& & % ()&',
+    ' ()&_---()&\\&\\|&&-&&--%---()~',
+  ],
+  bar: [
+    '   _______________________',
+    '  |  HOYO 19 - BAR DEL   |',
+    '  |      CLUBHOUSE       |',
+    '  |______________________|',
+    '      \\   ____   ____',
+    '       \\ |____| |____|',
+    '        \\|____| |____|',
+  ],
+};
+
 const SCENES = {
   intro: {
     title: 'BOOT',
@@ -1017,6 +1097,33 @@ export function getGameSidebarLines(state) {
     'BITACORA',
     ...history,
   ];
+}
+
+export function getGameArtLines(state) {
+  const sceneId = state.currentSceneId;
+  let art = SCENE_ART.intro;
+
+  if (sceneId === 'intro') {
+    art = SCENE_ART.intro;
+  } else if (sceneId.startsWith('p1')) {
+    art = SCENE_ART.parking;
+  } else if (sceneId.startsWith('p2')) {
+    art = SCENE_ART.card;
+  } else if (sceneId.startsWith('p3')) {
+    art = SCENE_ART.tee;
+  } else if (sceneId.startsWith('h1')) {
+    art = SCENE_ART.tee;
+  } else if (sceneId.startsWith('h2_bunker')) {
+    art = SCENE_ART.bunker;
+  } else if (sceneId.startsWith('h2')) {
+    art = SCENE_ART.water;
+  } else if (sceneId.startsWith('h3')) {
+    art = SCENE_ART.trees;
+  } else if (sceneId === 'ending') {
+    art = SCENE_ART.bar;
+  }
+
+  return art;
 }
 
 export function getGameStatus(state) {
