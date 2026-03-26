@@ -1,0 +1,208 @@
+{
+  "main": {
+    "id": "fc93c6ed76739987",
+    "type": "split",
+    "children": [
+      {
+        "id": "730b7b8cf54a1b9d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d37f47315991f2e7",
+            "type": "leaf",
+            "state": {
+              "type": "graph",
+              "state": {},
+              "icon": "lucide-git-fork",
+              "title": "Graph view"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "dd505c287f183077",
+    "type": "split",
+    "children": [
+      {
+        "id": "53445987b9670f87",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "cef4a475dda92e89",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "62c00bcec74ce8b0",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "8734da06ce30f6ed",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "f9dc5a1ad00055e6",
+    "type": "split",
+    "children": [
+      {
+        "id": "975e02861173ee17",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "8bf3c7c2730f213c",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "0a8b3e4f4e1e4b4b",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "5cce52f5fe2f5737",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "028872c6a1b9759a",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "ed86166a828573a9",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "d37f47315991f2e7",
+  "lastOpenFiles": [
+    "Official R&A/Definitions/Wrong Ball.md",
+    "Official R&A/Rules/Rule 1.md",
+    "Official R&A/Clarifications/Rule 12 Clarifications.md",
+    "Official R&A/Definitions/Teeing Area.md",
+    "Official R&A/Rules/Rule 14.md",
+    "Official R&A/Definitions/Abnormal Course Condition.md",
+    "Official R&A/Definitions Index.md",
+    "Official R&A/Clarifications Index.md",
+    "Official R&A/Rules/Rule 17.md",
+    "Official R&A/Rules/Rule 10.md",
+    "Official R&A/Clarifications/Rule 21 Clarifications.md",
+    "Official R&A/Rules/Rule 2.md",
+    "README.md",
+    "Official R&A/Clarifications/Rule 1 Clarifications.md",
+    "Official R&A/Definitions/Equipment.md",
+    "Official R&A/Rules Index.md",
+    "Official R&A/Clarifications/Rule 25 Clarifications.md",
+    "Official R&A/Rules/Rule 25.md",
+    "Official R&A/Clarifications/Rule 24 Clarifications.md",
+    "Official R&A/Rules/Rule 24.md",
+    "Official R&A/Clarifications/Rule 23 Clarifications.md",
+    "Official R&A/Rules/Rule 23.md",
+    "Official R&A/Clarifications/Rule 22 Clarifications.md",
+    "Official R&A/Rules/Rule 22.md",
+    "Official R&A/Rules/Rule 21.md",
+    "Official R&A/Clarifications/Rule 20 Clarifications.md"
+  ]
+}

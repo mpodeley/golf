@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Golf Rules Terminal Browser</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="shell">
+      <header class="topbar">
+        <div class="brand">
+          <span class="prompt">$</span>
+          <span>Golf Rules Terminal Browser</span>
+        </div>
+        <div class="meta" id="app-stats"></div>
+      </header>
+
+      <section class="toolbar">
+        <input id="search-input" type="search" placeholder="search notes, rules, definitions..." />
+        <div class="filters" id="kind-filters">
+          <button data-kind="all" class="active">all</button>
+          <button data-kind="rule">rules</button>
+          <button data-kind="clarification">clarifications</button>
+          <button data-kind="definition">definitions</button>
+        </div>
+      </section>
+
+      <main class="layout">
+        <aside class="pane list-pane">
+          <div class="pane-title">Index</div>
+          <div class="pane-body" id="note-list"></div>
+        </aside>
+
+        <section class="pane content-pane">
+          <div class="pane-title" id="content-title">Note</div>
+          <article class="pane-body markdown" id="content-body"></article>
+        </section>
+
+        <aside class="pane side-pane">
+          <div class="pane-title">Context</div>
+          <div class="pane-body side-stack">
+            <section>
+              <h3>Sections</h3>
+              <div id="toc-list"></div>
+            </section>
+            <section>
+              <h3>Links</h3>
+              <div id="outbound-list"></div>
+            </section>
+            <section>
+              <h3>Backlinks</h3>
+              <div id="backlink-list"></div>
+            </section>
+          </div>
+        </aside>
+      </main>
+
+      <footer class="statusbar" id="statusbar">ready</footer>
+    </div>
+
+    <script src="./data/content.js"></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
