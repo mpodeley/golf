@@ -1,5 +1,15 @@
 import { Terminal } from './vendor/xterm.mjs';
 import { FitAddon } from './vendor/addon-fit.mjs';
+import {
+  createGameState,
+  getGameBodyLines,
+  getGameChoiceItems,
+  getGameScene,
+  getGameSidebarLines,
+  getGameStatus,
+  gameScoreTotal,
+  stepGame,
+} from './game.js';
 
 const payload = await fetch('./data/content.json').then((response) => response.json());
 const notes = payload.notes ?? [];
@@ -8,6 +18,7 @@ const terminalElement = document.getElementById('terminal');
 const interactiveZones = [];
 
 const state = {
+  mode: 'library',
   query: '',
   kind: 'all',
   focus: 'list',
@@ -18,6 +29,7 @@ const state = {
   sideIndex: 0,
   inputMode: 'normal',
   searchDraft: '',
+  game: createGameState(),
 };
 
 const terminal = new Terminal({
@@ -172,6 +184,68 @@ function startSearch() {
   state.searchDraft = state.query;
 }
 
+function setMode(mode) {
+  state.mode = mode;
+  state.inputMode = 'normal';
+  if (mode === 'play') {
+    state.focus = 'side';
+  } else {
+    state.focus = 'list';
+  }
+}
+
+function restartGame() {
+  state.game = createGameState();
+  state.focus = 'side';
+  state.inputMode = 'normal';
+}
+
+function playChoiceItems() {
+  const items = getGameChoiceItems(state.game);
+  if (items.length) {
+    return items;
+  }
+
+  if (getGameScene(state.game).title === 'Hoyo 19') {
+    return [
+      { label: 'Reiniciar aventura', kind: 'restart' },
+      { label: 'Volver al vault', kind: 'vault' },
+    ];
+  }
+
+  return [];
+}
+
+function activatePlayChoice(index) {
+  const items = playChoiceItems();
+  const item = items[index];
+  if (!item) {
+    return;
+  }
+
+  if (item.kind === 'restart') {
+    restartGame();
+    return;
+  }
+
+  if (item.kind === 'vault') {
+    setMode('library');
+    return;
+  }
+
+  stepGame(state.game, index);
+}
+
+function moveActivePlayChoice(delta) {
+  const items = playChoiceItems();
+  if (!items.length) {
+    state.game.choiceIndex = 0;
+    return;
+  }
+
+  state.game.choiceIndex = Math.max(0, Math.min(items.length - 1, state.game.choiceIndex + delta));
+}
+
 function sideItems(note) {
   if (!note) {
     return [];
@@ -294,9 +368,143 @@ function drawBox(width, height, title, bodyLines, selectedIndex = -1, focus = fa
 
 function render() {
   const { cols, leftWidth, rightWidth, centerWidth, mainHeight, mainTop } = getLayout();
+  interactiveZones.length = 0;
+
+  if (state.mode === 'play') {
+    const scene = getGameScene(state.game);
+    const sidebarLines = getGameSidebarLines(state.game);
+    const contentLines = wrapText(getGameBodyLines(state.game).join('\n'), centerWidth - 2);
+    const maxGameScroll = Math.max(0, contentLines.length - (mainHeight - 2));
+    state.game.contentScroll = Math.max(0, Math.min(maxGameScroll, state.game.contentScroll));
+    const visibleContentLines = contentLines.slice(
+      state.game.contentScroll,
+      state.game.contentScroll + mainHeight - 2,
+    );
+    const choiceItems = playChoiceItems();
+    const choiceLines = choiceItems.map((item, index) => `${String.fromCharCode(65 + index)} ${item.label}`);
+
+    const leftBox = drawBox(
+      leftWidth,
+      mainHeight,
+      'CARD',
+      sidebarLines,
+      -1,
+      state.focus === 'list',
+    );
+    const contentBox = drawBox(
+      centerWidth,
+      mainHeight,
+      scene.title.toUpperCase(),
+      visibleContentLines,
+      -1,
+      state.focus === 'content',
+    );
+    const sideBox = drawBox(
+      rightWidth,
+      mainHeight,
+      state.game.feedback ? 'RESULT' : 'OPTIONS',
+      choiceLines.length ? choiceLines : ['Sin opciones'],
+      state.focus === 'side' ? state.game.choiceIndex : -1,
+      state.focus === 'side',
+    );
+
+    const header = pad(
+      `$ golf ansi adventure | scene:${scene.title} | total:${gameScoreTotal(state.game)} | etiqueta:${state.game.etiquette}`,
+      cols,
+    );
+
+    const toolbarSpecs = [
+      { label: 'vault', active: false, onClick: () => setMode('library') },
+      { label: 'play', active: true, onClick: () => setMode('play') },
+      { label: 'restart', active: false, onClick: () => restartGame() },
+    ];
+    const toolbar = [];
+    let toolbarColumn = 0;
+
+    for (const spec of toolbarSpecs) {
+      const visibleLabel = `[${spec.label}]`;
+      if (toolbarColumn + visibleLabel.length > cols) {
+        break;
+      }
+
+      addInteractiveZone({
+        x1: toolbarColumn,
+        x2: Math.min(cols, toolbarColumn + visibleLabel.length),
+        y1: 1,
+        y2: 2,
+        onClick: spec.onClick,
+      });
+
+      toolbar.push(
+        spec.active
+          ? `\x1b[30;103m${visibleLabel}\x1b[0m`
+          : `\x1b[38;2;201;255;215m${visibleLabel}\x1b[0m`,
+      );
+      toolbarColumn += visibleLabel.length;
+
+      if (toolbarColumn < cols) {
+        toolbar.push(' ');
+        toolbarColumn += 1;
+      }
+    }
+
+    addInteractiveZone({
+      x1: 0,
+      x2: leftWidth,
+      y1: mainTop,
+      y2: mainTop + mainHeight,
+      onClick: () => {
+        state.focus = 'list';
+      },
+    });
+    addInteractiveZone({
+      x1: leftWidth,
+      x2: leftWidth + centerWidth,
+      y1: mainTop,
+      y2: mainTop + mainHeight,
+      onClick: () => {
+        state.focus = 'content';
+      },
+    });
+    addInteractiveZone({
+      x1: leftWidth + centerWidth,
+      x2: cols,
+      y1: mainTop,
+      y2: mainTop + mainHeight,
+      onClick: () => {
+        state.focus = 'side';
+      },
+    });
+
+    for (let index = 0; index < Math.min(choiceLines.length, mainHeight - 2); index += 1) {
+      addInteractiveZone({
+        x1: leftWidth + centerWidth + 1,
+        x2: Math.max(leftWidth + centerWidth + 1, cols - 1),
+        y1: mainTop + 1 + index,
+        y2: mainTop + 2 + index,
+        onClick: () => {
+          state.game.choiceIndex = index;
+          activatePlayChoice(index);
+        },
+      });
+    }
+
+    const frame = [];
+    frame.push(`\x1b[38;2;215;255;137m${header}\x1b[0m`);
+    frame.push(toolbar.join(''));
+    for (let row = 0; row < mainHeight; row += 1) {
+      frame.push(`${leftBox[row] ?? ''}${contentBox[row] ?? ''}${sideBox[row] ?? ''}`);
+    }
+    frame.push(`\x1b[38;2;111;168;131m${pad(getGameStatus(state.game), cols)}\x1b[0m`);
+    frame.push(`\x1b[38;2;111;168;131m${pad('Tu Primera Vuelta | click o teclado para elegir', cols)}\x1b[0m`);
+
+    terminal.write('\x1b[2J\x1b[H');
+    terminal.write(frame.join('\r\n'));
+    return;
+  }
+
   const note = currentNote();
   const filtered = filteredNotes();
-  interactiveZones.length = 0;
 
   const listLines = filtered.map((item) => {
     const prefix = item.kind[0].toUpperCase();
@@ -338,6 +546,16 @@ function render() {
   );
   const toolbarSpecs = [
     {
+      label: 'vault',
+      active: true,
+      onClick: () => setMode('library'),
+    },
+    {
+      label: 'play',
+      active: false,
+      onClick: () => setMode('play'),
+    },
+    {
       label: state.query ? `find:${state.query.slice(0, 8)}` : 'find',
       active: state.inputMode === 'search',
       onClick: () => startSearch(),
@@ -377,6 +595,11 @@ function render() {
       active: state.sideMode === 'toc',
       onClick: () => setSideMode('toc'),
     },
+    {
+      label: 'restart',
+      active: false,
+      onClick: () => restartGame(),
+    },
   ];
   const toolbar = [];
   let toolbarColumn = 0;
@@ -412,7 +635,7 @@ function render() {
     state.inputMode === 'search'
       ? pad(`search> ${state.searchDraft}`, cols)
       : pad(
-          'click panels | wheel note | tab focus | / search | 1/2/3/4 kind | l/b/t side | enter open | q quit',
+          'g play | click panels | wheel note | tab focus | / search | 1/2/3/4 kind | l/b/t side | enter open | q quit',
           cols,
         );
 
@@ -551,6 +774,75 @@ terminal.onData((data) => {
     return;
   }
 
+  if (state.mode === 'play') {
+    if (data === '\u0003' || data === 'q') {
+      terminal.dispose();
+      return;
+    }
+    if (data === 'v') {
+      setMode('library');
+      render();
+      return;
+    }
+    if (data === 'g') {
+      setMode('play');
+      render();
+      return;
+    }
+    if (data === 'r') {
+      restartGame();
+      render();
+      return;
+    }
+    if (data === '\t') {
+      state.focus = state.focus === 'list' ? 'content' : state.focus === 'content' ? 'side' : 'list';
+      render();
+      return;
+    }
+    if (data === '\r') {
+      if (state.focus === 'side') {
+        activatePlayChoice(state.game.choiceIndex);
+      }
+      render();
+      return;
+    }
+
+    const up = data === '\u001b[A' || data === 'k';
+    const down = data === '\u001b[B' || data === 'j';
+    const pageUp = data === '\u001b[5~';
+    const pageDown = data === '\u001b[6~';
+
+    if (state.focus === 'content') {
+      if (up) {
+        state.game.contentScroll = Math.max(0, state.game.contentScroll - 1);
+        render();
+      } else if (down) {
+        state.game.contentScroll += 1;
+        render();
+      } else if (pageUp) {
+        state.game.contentScroll = Math.max(0, state.game.contentScroll - 10);
+        render();
+      } else if (pageDown) {
+        state.game.contentScroll += 10;
+        render();
+      }
+      return;
+    }
+
+    if (state.focus === 'side') {
+      if (up) {
+        moveActivePlayChoice(-1);
+        render();
+      } else if (down) {
+        moveActivePlayChoice(1);
+        render();
+      }
+      return;
+    }
+
+    return;
+  }
+
   if (data === '\u0003' || data === 'q') {
     terminal.dispose();
     return;
@@ -562,6 +854,21 @@ terminal.onData((data) => {
   }
   if (data === '/') {
     startSearch();
+    render();
+    return;
+  }
+  if (data === 'g') {
+    setMode('play');
+    render();
+    return;
+  }
+  if (data === 'v') {
+    setMode('library');
+    render();
+    return;
+  }
+  if (data === 'r') {
+    restartGame();
     render();
     return;
   }
@@ -689,7 +996,11 @@ terminalElement.addEventListener(
 
     event.preventDefault();
     state.focus = 'content';
-    scrollContent(event.deltaY > 0 ? 3 : -3);
+    if (state.mode === 'play') {
+      state.game.contentScroll = Math.max(0, state.game.contentScroll + (event.deltaY > 0 ? 3 : -3));
+    } else {
+      scrollContent(event.deltaY > 0 ? 3 : -3);
+    }
     terminal.focus();
     render();
   },

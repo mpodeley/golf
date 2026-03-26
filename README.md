@@ -67,6 +67,7 @@ El root de GitHub Pages ahora apunta a un browser ANSI en navegador, inspirado e
 - paneles ANSI
 - backlinks
 - tabla de contenidos
+- modo `play` con una aventura de 3 hoyos
 
 El dataset exportado queda en `site/data/`.
 
@@ -92,6 +93,28 @@ Mouse en terminal:
 - rueda del mouse sobre `NOTE` para hacer scroll
 
 Para esto conviene usar una terminal con soporte de mouse tipo Windows Terminal, iTerm2, kitty o wezterm.
+
+## Modo Juego
+
+El browser web ahora tiene dos modos:
+
+- `vault`: navegador de reglas
+- `play`: aventura interactiva "Tu Primera Vuelta"
+
+En `play`:
+
+- click o `enter` para elegir opciones
+- `g` cambia a juego
+- `v` vuelve al vault
+- `r` reinicia la aventura
+- `tab` cambia foco entre scorecard, escena y opciones
+
+La aventura actual cubre prologo + 3 hoyos y trackea:
+
+- score por hoyo
+- penalidades
+- etiqueta
+- reglas acertadas y erradas
 
 ## GitHub Pages
 
