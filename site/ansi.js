@@ -186,6 +186,10 @@ function startSearch() {
   state.searchDraft = state.query;
 }
 
+function goToJrpg() {
+  window.location.href = './jrpg/';
+}
+
 function setMode(mode) {
   state.mode = mode;
   state.inputMode = 'normal';
@@ -468,6 +472,7 @@ function render() {
     const toolbarSpecs = [
       { label: 'vault', active: false, onClick: () => setMode('library') },
       { label: 'play', active: true, onClick: () => setMode('play') },
+      { label: 'jrpg', active: false, onClick: () => goToJrpg() },
       { label: 'restart', active: false, onClick: () => restartGame() },
     ];
     const toolbar = [];
@@ -611,6 +616,11 @@ function render() {
       onClick: () => setMode('play'),
     },
     {
+      label: 'jrpg',
+      active: false,
+      onClick: () => goToJrpg(),
+    },
+    {
       label: state.query ? `find:${state.query.slice(0, 8)}` : 'find',
       active: state.inputMode === 'search',
       onClick: () => startSearch(),
@@ -690,7 +700,7 @@ function render() {
     state.inputMode === 'search'
       ? pad(`search> ${state.searchDraft}`, cols)
       : pad(
-          'g play | click panels | wheel note | tab focus | / search | 1/2/3/4 kind | l/b/t side | enter open | q quit',
+          'g play | x jrpg | click panels | wheel note | tab focus | / search | 1/2/3/4 kind | l/b/t side | enter open | q quit',
           cols,
         );
 
@@ -844,6 +854,10 @@ terminal.onData((data) => {
       render();
       return;
     }
+    if (data === 'x') {
+      goToJrpg();
+      return;
+    }
     if (data === 'r') {
       restartGame();
       render();
@@ -915,6 +929,10 @@ terminal.onData((data) => {
   if (data === 'g') {
     setMode('play');
     render();
+    return;
+  }
+  if (data === 'x') {
+    goToJrpg();
     return;
   }
   if (data === 'v') {

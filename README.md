@@ -120,6 +120,24 @@ La aventura actual cubre prologo + 3 hoyos y trackea:
 - etiqueta
 - reglas acertadas y erradas
 
+## Prototipo JRPG
+
+Tambien hay un spike nuevo en Phaser:
+
+- URL publicada: `/jrpg/`
+- mapa explorable con walking top-down
+- NPCs con dialogo
+- primer quiz de reglas dentro del mundo
+- placeholders SVG + tiles generados en runtime
+
+Pipeline de assets recomendado para esta rama:
+
+1. placeholders SVG para personajes y props
+2. tiles temporales generados en Phaser
+3. luego Tiled + tileset real + portraits
+
+Ver [site/jrpg/assets/README.md](C:\Users\mpodeley\Documents\Golf\site\jrpg\assets\README.md).
+
 ## GitHub Pages
 
 El repo ya queda listo para publicar con GitHub Pages usando GitHub Actions:

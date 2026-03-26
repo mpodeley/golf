@@ -1132,10 +1132,10 @@ export function getGameStatus(state) {
   }
 
   if (state.currentSceneId === 'ending') {
-    return 'r restart | v vault | click en toolbar | rueda para scroll';
+    return 'r restart | v vault | x jrpg | click en toolbar | rueda para scroll';
   }
 
-  return 'j/k moverse | enter elegir | click elegir | tab foco | r restart | v vault';
+  return 'j/k moverse | enter elegir | click elegir | tab foco | r restart | v vault | x jrpg';
 }
 
 export function stepGame(state, index) {

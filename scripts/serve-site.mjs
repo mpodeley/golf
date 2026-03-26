@@ -20,7 +20,12 @@ const contentTypes = new Map([
 const server = createServer(async (request, response) => {
   try {
     const url = new URL(request.url ?? '/', `http://${request.headers.host}`);
-    const requestedPath = url.pathname === '/' ? '/index.html' : url.pathname;
+    const requestedPath =
+      url.pathname === '/'
+        ? '/index.html'
+        : url.pathname.endsWith('/')
+          ? `${url.pathname}index.html`
+          : url.pathname;
     const filePath = path.normalize(path.join(root, requestedPath));
 
     if (!filePath.startsWith(root)) {
