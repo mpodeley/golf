@@ -5,11 +5,14 @@
   "scripts": {
     "import:randa": "node scripts/import-randa.mjs",
     "export:vault": "node scripts/export-vault.mjs",
-    "build:site": "npm run import:randa && npm run export:vault",
+    "copy:site-vendor": "node scripts/copy-site-vendor.mjs",
+    "build:site": "npm run import:randa && npm run export:vault && npm run copy:site-vendor",
     "serve:site": "node scripts/serve-site.mjs",
     "tui": "node scripts/run-tui.mjs"
   },
   "dependencies": {
+    "@xterm/addon-fit": "^0.11.0",
+    "@xterm/xterm": "^6.0.0",
     "blessed": "^0.1.81",
     "jsdom": "^27.0.0",
     "marked": "^17.0.5",

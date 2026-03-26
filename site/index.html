@@ -3,76 +3,12 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Golf Rules Terminal Browser</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <title>Golf Rules ANSI Browser</title>
+    <link rel="stylesheet" href="./vendor/xterm.css" />
+    <link rel="stylesheet" href="./ansi.css" />
   </head>
   <body>
-    <div class="shell">
-      <header class="topbar">
-        <div class="brand">
-          <span class="prompt">$</span>
-          <span>Golf Rules Terminal Browser</span>
-        </div>
-        <div class="meta" id="app-stats"></div>
-      </header>
-
-      <section class="toolbar">
-        <label class="search-shell">
-          <span class="search-prompt">find&gt;</span>
-          <input id="search-input" type="search" placeholder="rule 16, abnormal course condition, wrong ball..." />
-        </label>
-        <div class="toolbar-actions">
-          <div class="filters" id="kind-filters">
-            <button data-kind="all" class="active">all</button>
-            <button data-kind="rule">rules</button>
-            <button data-kind="clarification">clarifications</button>
-            <button data-kind="definition">definitions</button>
-          </div>
-          <div class="filters" id="view-filters">
-            <button data-view="note" class="active">note</button>
-            <button data-view="graph">graph</button>
-          </div>
-        </div>
-      </section>
-
-      <main class="layout">
-        <aside class="pane list-pane">
-          <div class="pane-title">Index</div>
-          <div class="pane-body" id="note-list"></div>
-        </aside>
-
-        <section class="pane content-pane">
-          <div class="pane-title" id="content-title">Note</div>
-          <article class="pane-body markdown" id="content-body"></article>
-          <section class="pane-body graph-view hidden" id="graph-view">
-            <div class="graph-summary" id="graph-summary"></div>
-            <svg id="graph-svg" viewBox="0 0 1000 720" preserveAspectRatio="xMidYMid meet"></svg>
-          </section>
-        </section>
-
-        <aside class="pane side-pane">
-          <div class="pane-title">Context</div>
-          <div class="pane-body side-stack">
-            <section>
-              <h3>Sections</h3>
-              <div id="toc-list"></div>
-            </section>
-            <section>
-              <h3>Links</h3>
-              <div id="outbound-list"></div>
-            </section>
-            <section>
-              <h3>Backlinks</h3>
-              <div id="backlink-list"></div>
-            </section>
-          </div>
-        </aside>
-      </main>
-
-      <footer class="statusbar" id="statusbar">ready | tab:note | click links to navigate</footer>
-    </div>
-
-    <script src="./data/content.js"></script>
-    <script type="module" src="./app.js"></script>
+    <div id="terminal"></div>
+    <script type="module" src="./ansi.js"></script>
   </body>
 </html>

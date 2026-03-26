@@ -53,17 +53,16 @@ Eso deja el juego completo para una segunda etapa, pero ya produce una app util 
 
 Ya existe un MVP navegable en `site/`:
 
-1. `npm run import:randa`
-2. `npm run export:vault`
-3. `npm run serve:site`
-4. `npm run tui`
+1. `npm run build:site`
+2. `npm run serve:site`
+3. `npm run tui`
 
-Esto genera un browser terminal web con:
+El root de GitHub Pages ahora apunta a un browser ANSI en navegador, inspirado en terminal/BBS, con:
 
 - busqueda
 - filtros por tipo
-- modo `note` y modo `graph`
-- navegacion entre notas
+- navegacion por teclado
+- paneles ANSI
 - backlinks
 - tabla de contenidos
 
