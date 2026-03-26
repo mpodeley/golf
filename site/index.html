@@ -17,7 +17,10 @@
       </header>
 
       <section class="toolbar">
-        <input id="search-input" type="search" placeholder="search notes, rules, definitions..." />
+        <label class="search-shell">
+          <span class="search-prompt">find&gt;</span>
+          <input id="search-input" type="search" placeholder="rule 16, abnormal course condition, wrong ball..." />
+        </label>
         <div class="toolbar-actions">
           <div class="filters" id="kind-filters">
             <button data-kind="all" class="active">all</button>
@@ -66,7 +69,7 @@
         </aside>
       </main>
 
-      <footer class="statusbar" id="statusbar">ready</footer>
+      <footer class="statusbar" id="statusbar">ready | tab:note | click links to navigate</footer>
     </div>
 
     <script src="./data/content.js"></script>
