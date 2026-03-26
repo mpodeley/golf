@@ -16,12 +16,14 @@ const state = {
   selectedIndex: 0,
   currentNoteId: notes[0]?.id ?? '',
   sideMode: 'links',
+  contentScroll: 0,
 };
 
 const screen = blessed.screen({
   smartCSR: true,
   dockBorders: true,
   fullUnicode: true,
+  mouse: true,
   title: 'Golf Rules TUI',
 });
 
@@ -64,12 +66,27 @@ const footer = blessed.box({
   },
 });
 
-const listPanel = blessed.list({
+const toolbar = blessed.box({
   parent: screen,
   top: 3,
   left: 0,
+  width: '100%',
+  height: 3,
+  tags: true,
+  border: 'line',
+  style: {
+    fg: colors.text,
+    bg: colors.panel,
+    border: { fg: colors.border },
+  },
+});
+
+const listPanel = blessed.list({
+  parent: screen,
+  top: 6,
+  left: 0,
   width: '28%',
-  height: '100%-6',
+  height: '100%-9',
   label: ' {yellow-fg}INDEX{/yellow-fg} ',
   border: 'line',
   keys: true,
@@ -90,10 +107,10 @@ const listPanel = blessed.list({
 
 const contentPanel = blessed.box({
   parent: screen,
-  top: 3,
+  top: 6,
   left: '28%',
   width: '50%',
-  height: '100%-6',
+  height: '100%-9',
   label: ' {yellow-fg}NOTE{/yellow-fg} ',
   border: 'line',
   scrollable: true,
@@ -115,10 +132,10 @@ const contentPanel = blessed.box({
 
 const sidePanel = blessed.list({
   parent: screen,
-  top: 3,
+  top: 6,
   left: '78%',
   width: '22%',
-  height: '100%-6',
+  height: '100%-9',
   label: ' {yellow-fg}LINKS{/yellow-fg} ',
   border: 'line',
   keys: true,
@@ -136,6 +153,62 @@ const sidePanel = blessed.list({
     style: { bg: colors.border },
   },
 });
+
+function makeToolbarButton({ left, width, onPress }) {
+  const button = blessed.button({
+    parent: toolbar,
+    mouse: true,
+    keys: false,
+    shrink: true,
+    top: 0,
+    left,
+    width,
+    height: 1,
+    content: '',
+    tags: true,
+    padding: {
+      left: 1,
+      right: 1,
+    },
+    style: {
+      fg: colors.text,
+      bg: 'black',
+      focus: {
+        fg: 'black',
+        bg: colors.accent,
+      },
+      hover: {
+        fg: 'black',
+        bg: colors.accent,
+      },
+    },
+  });
+
+  button.on('press', () => {
+    onPress();
+  });
+
+  return button;
+}
+
+const toolbarButtons = {
+  search: makeToolbarButton({ left: 1, width: 16, onPress: () => promptSearch() }),
+  all: makeToolbarButton({ left: 17, width: 8, onPress: () => applyKind('all') }),
+  rules: makeToolbarButton({ left: 25, width: 10, onPress: () => applyKind('rule') }),
+  definitions: makeToolbarButton({ left: 35, width: 9, onPress: () => applyKind('definition') }),
+  clarifications: makeToolbarButton({ left: 44, width: 10, onPress: () => applyKind('clarification') }),
+  links: makeToolbarButton({ left: 54, width: 9, onPress: () => applySideMode('links') }),
+  backlinks: makeToolbarButton({ left: 63, width: 8, onPress: () => applySideMode('backlinks') }),
+  toc: makeToolbarButton({ left: 71, width: 6, onPress: () => applySideMode('toc') }),
+  quit: makeToolbarButton({
+    left: 77,
+    width: 7,
+    onPress: () => {
+      screen.destroy();
+      process.exit(0);
+    },
+  }),
+};
 
 function filteredNotes() {
   const query = state.query.trim().toLowerCase();
@@ -158,6 +231,40 @@ function currentNote() {
   return noteMap.get(state.currentNoteId) ?? filteredNotes()[0] ?? notes[0];
 }
 
+function focusPanel(panel) {
+  state.focus = panel;
+}
+
+function setCurrentNoteId(noteId) {
+  if (!noteId || !noteMap.has(noteId)) {
+    return;
+  }
+
+  state.currentNoteId = noteId;
+  state.contentScroll = 0;
+}
+
+function selectFirstFilteredNote() {
+  state.selectedIndex = 0;
+  const first = filteredNotes()[0];
+  if (first) {
+    setCurrentNoteId(first.id);
+  }
+}
+
+function applyKind(kind) {
+  state.kind = kind;
+  focusPanel('list');
+  selectFirstFilteredNote();
+  refresh();
+}
+
+function applySideMode(mode) {
+  state.sideMode = mode;
+  focusPanel('side');
+  refresh();
+}
+
 function normalizeMarkdown(text) {
   return text
     .replace(/\[\[([^\]|#]+)?(?:#([^\]|]+))?(?:\|([^\]]+))?\]\]/g, (_, note, anchor, label) => {
@@ -175,6 +282,12 @@ function notePlainText(note) {
   return normalizeMarkdown(note.body);
 }
 
+function setButtonContent(button, label, active = false) {
+  button.setContent(` ${label} `);
+  button.style.fg = active ? 'black' : colors.text;
+  button.style.bg = active ? colors.accent : 'black';
+}
+
 function renderHeader() {
   header.setContent(
     `{green-fg}$ {/green-fg}{bold}Golf Rules TUI{/bold}  ` +
@@ -183,6 +296,21 @@ function renderHeader() {
       `{gray-fg}results:{/gray-fg} ${filteredNotes().length}  ` +
       `{gray-fg}side:{/gray-fg} ${state.sideMode}`,
   );
+}
+
+function renderToolbar() {
+  setButtonContent(
+    toolbarButtons.search,
+    state.query ? `find:${state.query.slice(0, 8)}` : 'find',
+  );
+  setButtonContent(toolbarButtons.all, 'all', state.kind === 'all');
+  setButtonContent(toolbarButtons.rules, 'rules', state.kind === 'rule');
+  setButtonContent(toolbarButtons.definitions, 'defs', state.kind === 'definition');
+  setButtonContent(toolbarButtons.clarifications, 'clar', state.kind === 'clarification');
+  setButtonContent(toolbarButtons.links, 'links', state.sideMode === 'links');
+  setButtonContent(toolbarButtons.backlinks, 'back', state.sideMode === 'backlinks');
+  setButtonContent(toolbarButtons.toc, 'toc', state.sideMode === 'toc');
+  setButtonContent(toolbarButtons.quit, 'quit');
 }
 
 function renderFooter() {
@@ -224,7 +352,7 @@ function renderContent() {
 
   contentPanel.setLabel(` {yellow-fg}${note.id}{/yellow-fg} `);
   contentPanel.setContent(notePlainText(note));
-  contentPanel.setScroll(0);
+  contentPanel.setScroll(state.contentScroll);
 }
 
 function renderSide() {
@@ -257,6 +385,7 @@ function renderSide() {
 
 function refresh() {
   renderHeader();
+  renderToolbar();
   renderFooter();
   renderList();
   renderContent();
@@ -279,7 +408,7 @@ function setCurrentNoteFromList(index) {
     return;
   }
   state.selectedIndex = index;
-  state.currentNoteId = note.id;
+  setCurrentNoteId(note.id);
 }
 
 function promptSearch() {
@@ -303,18 +432,45 @@ function promptSearch() {
 
   prompt.input('find>', state.query, (_, value) => {
     state.query = value ?? '';
-    state.selectedIndex = 0;
-    const first = filteredNotes()[0];
-    if (first) {
-      state.currentNoteId = first.id;
-    }
+    selectFirstFilteredNote();
+    focusPanel('list');
     prompt.destroy();
     refresh();
   });
 }
 
+listPanel.on('click', () => {
+  focusPanel('list');
+  refresh();
+});
+
 listPanel.on('select item', (_, index) => {
   setCurrentNoteFromList(index);
+  focusPanel('content');
+  refresh();
+});
+
+contentPanel.on('click', () => {
+  focusPanel('content');
+  refresh();
+});
+
+contentPanel.on('wheeldown', () => {
+  focusPanel('content');
+  contentPanel.scroll(4);
+  state.contentScroll = contentPanel.getScroll();
+  screen.render();
+});
+
+contentPanel.on('wheelup', () => {
+  focusPanel('content');
+  contentPanel.scroll(-4);
+  state.contentScroll = contentPanel.getScroll();
+  screen.render();
+});
+
+sidePanel.on('click', () => {
+  focusPanel('side');
   refresh();
 });
 
@@ -327,13 +483,15 @@ sidePanel.on('select item', (_, index) => {
   if (state.sideMode === 'links') {
     const target = note.outbound[index];
     if (target) {
-      state.currentNoteId = target.note;
+      setCurrentNoteId(target.note);
+      focusPanel('content');
       refresh();
     }
   } else if (state.sideMode === 'backlinks') {
     const target = note.backlinks[index];
     if (target) {
-      state.currentNoteId = target.note;
+      setCurrentNoteId(target.note);
+      focusPanel('content');
       refresh();
     }
   }
@@ -349,65 +507,32 @@ screen.key(['tab'], () => {
 });
 
 screen.key(['/'], () => promptSearch());
-screen.key(['1'], () => {
-  state.kind = 'all';
-  const first = filteredNotes()[0];
-  if (first) {
-    state.currentNoteId = first.id;
-  }
-  refresh();
-});
-screen.key(['2'], () => {
-  state.kind = 'rule';
-  const first = filteredNotes()[0];
-  if (first) {
-    state.currentNoteId = first.id;
-  }
-  refresh();
-});
-screen.key(['3'], () => {
-  state.kind = 'definition';
-  const first = filteredNotes()[0];
-  if (first) {
-    state.currentNoteId = first.id;
-  }
-  refresh();
-});
-screen.key(['4'], () => {
-  state.kind = 'clarification';
-  const first = filteredNotes()[0];
-  if (first) {
-    state.currentNoteId = first.id;
-  }
-  refresh();
-});
-screen.key(['l'], () => {
-  state.sideMode = 'links';
-  refresh();
-});
-screen.key(['b'], () => {
-  state.sideMode = 'backlinks';
-  refresh();
-});
-screen.key(['t'], () => {
-  state.sideMode = 'toc';
-  refresh();
-});
+screen.key(['1'], () => applyKind('all'));
+screen.key(['2'], () => applyKind('rule'));
+screen.key(['3'], () => applyKind('definition'));
+screen.key(['4'], () => applyKind('clarification'));
+screen.key(['l'], () => applySideMode('links'));
+screen.key(['b'], () => applySideMode('backlinks'));
+screen.key(['t'], () => applySideMode('toc'));
 
 contentPanel.key(['j', 'down'], () => {
   contentPanel.scroll(2);
+  state.contentScroll = contentPanel.getScroll();
   screen.render();
 });
 contentPanel.key(['k', 'up'], () => {
   contentPanel.scroll(-2);
+  state.contentScroll = contentPanel.getScroll();
   screen.render();
 });
 contentPanel.key(['pagedown'], () => {
   contentPanel.scroll(contentPanel.height - 4);
+  state.contentScroll = contentPanel.getScroll();
   screen.render();
 });
 contentPanel.key(['pageup'], () => {
   contentPanel.scroll(-(contentPanel.height - 4));
+  state.contentScroll = contentPanel.getScroll();
   screen.render();
 });
 

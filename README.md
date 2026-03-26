@@ -82,6 +82,15 @@ Atajos principales:
 - `l/b/t`: links, backlinks, toc
 - `q`: salir
 
+Mouse en terminal:
+
+- click en `INDEX`, `NOTE` o `LINKS` para cambiar foco
+- click en la barra superior para filtrar, buscar o cambiar el panel lateral
+- click en items del indice o backlinks para abrir notas
+- rueda del mouse sobre `NOTE` para hacer scroll
+
+Para esto conviene usar una terminal con soporte de mouse tipo Windows Terminal, iTerm2, kitty o wezterm.
+
 ## GitHub Pages
 
 El repo ya queda listo para publicar con GitHub Pages usando GitHub Actions:
