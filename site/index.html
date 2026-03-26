@@ -18,11 +18,17 @@
 
       <section class="toolbar">
         <input id="search-input" type="search" placeholder="search notes, rules, definitions..." />
-        <div class="filters" id="kind-filters">
-          <button data-kind="all" class="active">all</button>
-          <button data-kind="rule">rules</button>
-          <button data-kind="clarification">clarifications</button>
-          <button data-kind="definition">definitions</button>
+        <div class="toolbar-actions">
+          <div class="filters" id="kind-filters">
+            <button data-kind="all" class="active">all</button>
+            <button data-kind="rule">rules</button>
+            <button data-kind="clarification">clarifications</button>
+            <button data-kind="definition">definitions</button>
+          </div>
+          <div class="filters" id="view-filters">
+            <button data-view="note" class="active">note</button>
+            <button data-view="graph">graph</button>
+          </div>
         </div>
       </section>
 
@@ -35,6 +41,10 @@
         <section class="pane content-pane">
           <div class="pane-title" id="content-title">Note</div>
           <article class="pane-body markdown" id="content-body"></article>
+          <section class="pane-body graph-view hidden" id="graph-view">
+            <div class="graph-summary" id="graph-summary"></div>
+            <svg id="graph-svg" viewBox="0 0 1000 720" preserveAspectRatio="xMidYMid meet"></svg>
+          </section>
         </section>
 
         <aside class="pane side-pane">

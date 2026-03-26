@@ -86,6 +86,13 @@ body {
   flex-wrap: wrap;
 }
 
+.toolbar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 #search-input {
   flex: 1 1 280px;
   min-width: 220px;
@@ -127,7 +134,8 @@ body {
 .filters button:hover,
 .list-item.active,
 .list-item:hover,
-.link-button:hover {
+.link-button:hover,
+.graph-node:hover {
   border-color: var(--accent);
   color: var(--accent-strong);
 }
@@ -158,6 +166,10 @@ body {
   min-height: 0;
   overflow: auto;
   padding: 12px;
+}
+
+.hidden {
+  display: none;
 }
 
 #note-list,
@@ -255,6 +267,83 @@ body {
 .markdown img {
   max-width: 100%;
   border: 1px solid var(--line);
+}
+
+.graph-view {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.graph-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: var(--muted);
+  font-size: 0.92rem;
+}
+
+#graph-svg {
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(rgba(177, 255, 139, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(177, 255, 139, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at top, rgba(116, 227, 153, 0.08), transparent 35%),
+    var(--bg-soft);
+  background-size: 28px 28px, 28px 28px, auto, auto;
+}
+
+.graph-edge {
+  stroke: rgba(116, 227, 153, 0.16);
+  stroke-width: 1;
+}
+
+.graph-edge.selected {
+  stroke: rgba(177, 255, 139, 0.55);
+  stroke-width: 1.4;
+}
+
+.graph-cluster-label {
+  fill: var(--muted);
+  font: 12px var(--font);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.graph-node {
+  cursor: pointer;
+}
+
+.graph-node.definition {
+  fill: rgba(116, 227, 153, 0.75);
+}
+
+.graph-node.rule {
+  fill: rgba(255, 227, 138, 0.9);
+}
+
+.graph-node.clarification {
+  fill: rgba(137, 200, 255, 0.9);
+}
+
+.graph-node.selected {
+  fill: var(--accent-strong);
+  stroke: rgba(255, 255, 255, 0.6);
+  stroke-width: 1.5;
+}
+
+.graph-node.dimmed {
+  opacity: 0.16;
+}
+
+.graph-node-label {
+  fill: var(--text);
+  font: 11px var(--font);
+  pointer-events: none;
 }
 
 .toc-button {

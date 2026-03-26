@@ -61,6 +61,7 @@ Esto genera un browser terminal web con:
 
 - busqueda
 - filtros por tipo
+- modo `note` y modo `graph`
 - navegacion entre notas
 - backlinks
 - tabla de contenidos
