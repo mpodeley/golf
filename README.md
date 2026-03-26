@@ -62,6 +62,8 @@ El root de GitHub Pages ahora apunta a un browser ANSI en navegador, inspirado e
 - busqueda
 - filtros por tipo
 - navegacion por teclado
+- click en toolbar y paneles
+- rueda del mouse para scroll en la nota
 - paneles ANSI
 - backlinks
 - tabla de contenidos

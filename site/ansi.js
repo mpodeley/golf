@@ -4,6 +4,8 @@ import { FitAddon } from './vendor/addon-fit.mjs';
 const payload = await fetch('./data/content.json').then((response) => response.json());
 const notes = payload.notes ?? [];
 const noteMap = new Map(notes.map((note) => [note.id, note]));
+const terminalElement = document.getElementById('terminal');
+const interactiveZones = [];
 
 const state = {
   query: '',
@@ -49,7 +51,7 @@ const terminal = new Terminal({
 
 const fitAddon = new FitAddon();
 terminal.loadAddon(fitAddon);
-terminal.open(document.getElementById('terminal'));
+terminal.open(terminalElement);
 fitAddon.fit();
 
 window.addEventListener('resize', () => {
@@ -76,6 +78,98 @@ function filteredNotes() {
 
 function currentNote() {
   return noteMap.get(state.currentNoteId) ?? filteredNotes()[0] ?? notes[0];
+}
+
+function getLayout() {
+  const cols = terminal.cols || 80;
+  const rows = terminal.rows || 24;
+  const leftWidth = Math.max(22, Math.floor(cols * 0.28));
+  const rightWidth = Math.max(20, Math.floor(cols * 0.22));
+  const centerWidth = cols - leftWidth - rightWidth;
+  const mainHeight = Math.max(8, rows - 4);
+
+  return {
+    cols,
+    rows,
+    leftWidth,
+    rightWidth,
+    centerWidth,
+    mainHeight,
+    mainTop: 2,
+  };
+}
+
+function addInteractiveZone(zone) {
+  interactiveZones.push(zone);
+}
+
+function zoneAtCell(cell) {
+  for (let index = interactiveZones.length - 1; index >= 0; index -= 1) {
+    const zone = interactiveZones[index];
+    if (
+      cell.col >= zone.x1 &&
+      cell.col < zone.x2 &&
+      cell.row >= zone.y1 &&
+      cell.row < zone.y2
+    ) {
+      return zone;
+    }
+  }
+
+  return null;
+}
+
+function eventToCell(event) {
+  const rect = terminalElement.getBoundingClientRect();
+  if (!rect.width || !rect.height) {
+    return null;
+  }
+
+  const col = Math.max(
+    0,
+    Math.min(
+      (terminal.cols || 80) - 1,
+      Math.floor(((event.clientX - rect.left) / rect.width) * (terminal.cols || 80)),
+    ),
+  );
+  const row = Math.max(
+    0,
+    Math.min(
+      (terminal.rows || 24) - 1,
+      Math.floor(((event.clientY - rect.top) / rect.height) * (terminal.rows || 24)),
+    ),
+  );
+
+  return { col, row };
+}
+
+function setCurrentNoteId(noteId) {
+  if (!noteId || !noteMap.has(noteId)) {
+    return;
+  }
+
+  state.currentNoteId = noteId;
+  state.contentScroll = 0;
+  state.sideIndex = 0;
+}
+
+function selectFirstFilteredNote() {
+  state.selectedIndex = 0;
+  const first = filteredNotes()[0];
+  if (first) {
+    setCurrentNoteId(first.id);
+  }
+}
+
+function setSideMode(mode) {
+  state.sideMode = mode;
+  state.sideIndex = 0;
+  state.focus = 'side';
+}
+
+function startSearch() {
+  state.inputMode = 'search';
+  state.searchDraft = state.query;
 }
 
 function sideItems(note) {
@@ -147,6 +241,35 @@ function pad(text, width) {
   return text.length >= width ? text.slice(0, width) : text + ' '.repeat(width - text.length);
 }
 
+function scrollContent(delta) {
+  const note = currentNote();
+  const layout = getLayout();
+  const wrapped = wrapText(normalizeMarkdown(note?.body ?? ''), layout.centerWidth - 2);
+  const maxScroll = Math.max(0, wrapped.length - (layout.mainHeight - 2));
+  state.contentScroll = Math.max(0, Math.min(maxScroll, state.contentScroll + delta));
+}
+
+function scrollToHeading(index) {
+  const note = currentNote();
+  if (!note) {
+    return;
+  }
+
+  const headings = note.headings.filter((heading) => heading.depth >= 2);
+  const target = headings[index];
+  if (!target) {
+    return;
+  }
+
+  const layout = getLayout();
+  const wrapped = wrapText(normalizeMarkdown(note.body), layout.centerWidth - 2);
+  const lineIndex = wrapped.findIndex((line) => line.trim().includes(target.text));
+  if (lineIndex >= 0) {
+    state.contentScroll = lineIndex;
+  }
+  state.focus = 'content';
+}
+
 function drawBox(width, height, title, bodyLines, selectedIndex = -1, focus = false) {
   const innerWidth = Math.max(1, width - 2);
   const visibleLines = Math.max(0, height - 2);
@@ -170,15 +293,10 @@ function drawBox(width, height, title, bodyLines, selectedIndex = -1, focus = fa
 }
 
 function render() {
-  const cols = terminal.cols || 80;
-  const rows = terminal.rows || 24;
+  const { cols, leftWidth, rightWidth, centerWidth, mainHeight, mainTop } = getLayout();
   const note = currentNote();
   const filtered = filteredNotes();
-
-  const leftWidth = Math.max(22, Math.floor(cols * 0.28));
-  const rightWidth = Math.max(20, Math.floor(cols * 0.22));
-  const centerWidth = cols - leftWidth - rightWidth;
-  const mainHeight = rows - 4;
+  interactiveZones.length = 0;
 
   const listLines = filtered.map((item) => {
     const prefix = item.kind[0].toUpperCase();
@@ -218,14 +336,143 @@ function render() {
     `$ golf ansi browser | query:${state.query || '<none>'} | focus:${state.focus} | side:${state.sideMode} | notes:${filtered.length}`,
     cols,
   );
+  const toolbarSpecs = [
+    {
+      label: state.query ? `find:${state.query.slice(0, 8)}` : 'find',
+      active: state.inputMode === 'search',
+      onClick: () => startSearch(),
+    },
+    {
+      label: 'all',
+      active: state.kind === 'all',
+      onClick: () => setKind('all'),
+    },
+    {
+      label: 'rules',
+      active: state.kind === 'rule',
+      onClick: () => setKind('rule'),
+    },
+    {
+      label: 'defs',
+      active: state.kind === 'definition',
+      onClick: () => setKind('definition'),
+    },
+    {
+      label: 'clar',
+      active: state.kind === 'clarification',
+      onClick: () => setKind('clarification'),
+    },
+    {
+      label: 'links',
+      active: state.sideMode === 'links',
+      onClick: () => setSideMode('links'),
+    },
+    {
+      label: 'back',
+      active: state.sideMode === 'backlinks',
+      onClick: () => setSideMode('backlinks'),
+    },
+    {
+      label: 'toc',
+      active: state.sideMode === 'toc',
+      onClick: () => setSideMode('toc'),
+    },
+  ];
+  const toolbar = [];
+  let toolbarColumn = 0;
+
+  for (const spec of toolbarSpecs) {
+    const visibleLabel = `[${spec.label}]`;
+    if (toolbarColumn + visibleLabel.length > cols) {
+      break;
+    }
+
+    addInteractiveZone({
+      x1: toolbarColumn,
+      x2: Math.min(cols, toolbarColumn + visibleLabel.length),
+      y1: 1,
+      y2: 2,
+      onClick: spec.onClick,
+    });
+
+    toolbar.push(
+      spec.active
+        ? `\x1b[30;103m${visibleLabel}\x1b[0m`
+        : `\x1b[38;2;201;255;215m${visibleLabel}\x1b[0m`,
+    );
+    toolbarColumn += visibleLabel.length;
+
+    if (toolbarColumn < cols) {
+      toolbar.push(' ');
+      toolbarColumn += 1;
+    }
+  }
 
   const status =
     state.inputMode === 'search'
       ? pad(`search> ${state.searchDraft}`, cols)
-      : pad('tab focus | / search | 1/2/3/4 kind | l/b/t side | enter open | arrows/jk move | q quit', cols);
+      : pad(
+          'click panels | wheel note | tab focus | / search | 1/2/3/4 kind | l/b/t side | enter open | q quit',
+          cols,
+        );
+
+  addInteractiveZone({
+    x1: 0,
+    x2: leftWidth,
+    y1: mainTop,
+    y2: mainTop + mainHeight,
+    onClick: () => {
+      state.focus = 'list';
+    },
+  });
+  addInteractiveZone({
+    x1: leftWidth,
+    x2: leftWidth + centerWidth,
+    y1: mainTop,
+    y2: mainTop + mainHeight,
+    onClick: () => {
+      state.focus = 'content';
+    },
+  });
+  addInteractiveZone({
+    x1: leftWidth + centerWidth,
+    x2: cols,
+    y1: mainTop,
+    y2: mainTop + mainHeight,
+    onClick: () => {
+      state.focus = 'side';
+    },
+  });
+
+  for (let index = 0; index < Math.min(listLines.length, mainHeight - 2); index += 1) {
+    addInteractiveZone({
+      x1: 1,
+      x2: Math.max(1, leftWidth - 1),
+      y1: mainTop + 1 + index,
+      y2: mainTop + 2 + index,
+      onClick: () => {
+        selectFromList(index);
+        state.focus = 'content';
+      },
+    });
+  }
+
+  for (let index = 0; index < Math.min(sideData.length, mainHeight - 2); index += 1) {
+    addInteractiveZone({
+      x1: leftWidth + centerWidth + 1,
+      x2: Math.max(leftWidth + centerWidth + 1, cols - 1),
+      y1: mainTop + 1 + index,
+      y2: mainTop + 2 + index,
+      onClick: () => {
+        state.sideIndex = index;
+        openSideSelection();
+      },
+    });
+  }
 
   const frame = [];
   frame.push(`\x1b[38;2;215;255;137m${header}\x1b[0m`);
+  frame.push(toolbar.join(''));
   for (let row = 0; row < mainHeight; row += 1) {
     frame.push(`${listBox[row] ?? ''}${contentBox[row] ?? ''}${sideBox[row] ?? ''}`);
   }
@@ -242,9 +489,7 @@ function selectFromList(index) {
     return;
   }
   state.selectedIndex = Math.max(0, Math.min(index, filtered.length - 1));
-  state.currentNoteId = filtered[state.selectedIndex].id;
-  state.contentScroll = 0;
-  state.sideIndex = 0;
+  setCurrentNoteId(filtered[state.selectedIndex].id);
 }
 
 function openSideSelection() {
@@ -255,17 +500,17 @@ function openSideSelection() {
   if (state.sideMode === 'links') {
     const item = note.outbound[state.sideIndex];
     if (item) {
-      state.currentNoteId = item.note;
-      state.contentScroll = 0;
-      state.sideIndex = 0;
+      setCurrentNoteId(item.note);
+      state.focus = 'content';
     }
   } else if (state.sideMode === 'backlinks') {
     const item = note.backlinks[state.sideIndex];
     if (item) {
-      state.currentNoteId = item.note;
-      state.contentScroll = 0;
-      state.sideIndex = 0;
+      setCurrentNoteId(item.note);
+      state.focus = 'content';
     }
+  } else {
+    scrollToHeading(state.sideIndex);
   }
 }
 
@@ -275,13 +520,8 @@ function cycleFocus() {
 
 function setKind(kind) {
   state.kind = kind;
-  state.selectedIndex = 0;
-  const first = filteredNotes()[0];
-  if (first) {
-    state.currentNoteId = first.id;
-  }
-  state.contentScroll = 0;
-  state.sideIndex = 0;
+  state.focus = 'list';
+  selectFirstFilteredNote();
 }
 
 terminal.onData((data) => {
@@ -321,8 +561,7 @@ terminal.onData((data) => {
     return;
   }
   if (data === '/') {
-    state.inputMode = 'search';
-    state.searchDraft = state.query;
+    startSearch();
     render();
     return;
   }
@@ -347,20 +586,17 @@ terminal.onData((data) => {
     return;
   }
   if (data === 'l') {
-    state.sideMode = 'links';
-    state.sideIndex = 0;
+    setSideMode('links');
     render();
     return;
   }
   if (data === 'b') {
-    state.sideMode = 'backlinks';
-    state.sideIndex = 0;
+    setSideMode('backlinks');
     render();
     return;
   }
   if (data === 't') {
-    state.sideMode = 'toc';
-    state.sideIndex = 0;
+    setSideMode('toc');
     render();
     return;
   }
@@ -391,20 +627,17 @@ terminal.onData((data) => {
   }
 
   if (state.focus === 'content') {
-    const note = currentNote();
-    const wrapped = wrapText(normalizeMarkdown(note?.body ?? ''), centerWidthGuess() - 2);
-    const maxScroll = Math.max(0, wrapped.length - (terminal.rows - 6));
     if (up) {
-      state.contentScroll = Math.max(0, state.contentScroll - 1);
+      scrollContent(-1);
       render();
     } else if (down) {
-      state.contentScroll = Math.min(maxScroll, state.contentScroll + 1);
+      scrollContent(1);
       render();
     } else if (pageUp) {
-      state.contentScroll = Math.max(0, state.contentScroll - 10);
+      scrollContent(-10);
       render();
     } else if (pageDown) {
-      state.contentScroll = Math.min(maxScroll, state.contentScroll + 10);
+      scrollContent(10);
       render();
     }
     return;
@@ -422,12 +655,46 @@ terminal.onData((data) => {
   }
 });
 
-function centerWidthGuess() {
-  const cols = terminal.cols || 80;
-  const leftWidth = Math.max(22, Math.floor(cols * 0.28));
-  const rightWidth = Math.max(20, Math.floor(cols * 0.22));
-  return cols - leftWidth - rightWidth;
-}
+terminalElement.addEventListener('click', (event) => {
+  const cell = eventToCell(event);
+  const zone = cell ? zoneAtCell(cell) : null;
+  if (!zone) {
+    return;
+  }
+
+  event.preventDefault();
+  zone.onClick();
+  terminal.focus();
+  render();
+});
+
+terminalElement.addEventListener(
+  'wheel',
+  (event) => {
+    const cell = eventToCell(event);
+    if (!cell) {
+      return;
+    }
+
+    const { leftWidth, centerWidth, mainTop, mainHeight } = getLayout();
+    const overContent =
+      cell.row >= mainTop &&
+      cell.row < mainTop + mainHeight &&
+      cell.col >= leftWidth &&
+      cell.col < leftWidth + centerWidth;
+
+    if (!overContent) {
+      return;
+    }
+
+    event.preventDefault();
+    state.focus = 'content';
+    scrollContent(event.deltaY > 0 ? 3 : -3);
+    terminal.focus();
+    render();
+  },
+  { passive: false },
+);
 
 selectFromList(0);
 render();
