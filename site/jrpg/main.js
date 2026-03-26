@@ -75,7 +75,7 @@
 
       this.cameras.main.setBounds(0, 0, MAP_ROWS[0].length * TILE, MAP_ROWS.length * TILE);
       this.cameras.main.startFollow(this.player, true, 0.15, 0.15);
-      this.cameras.main.setZoom(1.6);
+      this.cameras.main.setZoom(1.42);
       this.cameras.main.roundPixels = true;
 
       this.time.delayedCall(300, () => {
@@ -304,7 +304,7 @@
         .setDepth(51);
 
       this.dialogBox = this.add
-        .rectangle(28, 360, 904, 152, 0x071108, 0.92)
+        .rectangle(28, 334, 904, 182, 0x071108, 0.92)
         .setOrigin(0)
         .setScrollFactor(0)
         .setDepth(60)
@@ -312,7 +312,7 @@
         .setVisible(false);
 
       this.dialogSpeaker = this.add
-        .text(48, 378, '', {
+        .text(48, 352, '', {
           fontFamily: '"IBM Plex Mono", monospace',
           fontSize: '14px',
           color: '#fff6a8',
@@ -322,19 +322,19 @@
         .setVisible(false);
 
       this.dialogText = this.add
-        .text(48, 404, '', {
+        .text(48, 378, '', {
           fontFamily: '"IBM Plex Mono", monospace',
-          fontSize: '15px',
+          fontSize: '14px',
           color: '#d7ffe2',
-          wordWrap: { width: 840 },
-          lineSpacing: 6,
+          wordWrap: { width: 850 },
+          lineSpacing: 4,
         })
         .setScrollFactor(0)
         .setDepth(61)
         .setVisible(false);
 
       this.dialogHint = this.add
-        .text(48, 480, '', {
+        .text(48, 486, '', {
           fontFamily: '"IBM Plex Mono", monospace',
           fontSize: '11px',
           color: '#8be0a7',
@@ -342,6 +342,34 @@
         .setScrollFactor(0)
         .setDepth(61)
         .setVisible(false);
+
+      this.layoutUi();
+      this.scale.on('resize', () => this.layoutUi());
+    }
+
+    layoutUi() {
+      const width = this.scale.width;
+      const height = this.scale.height;
+
+      this.hudPanel.setSize(Math.min(336, width - 24), 86);
+      this.hudText.setPosition(24, 22);
+      this.controlsText.setPosition(24, 102);
+
+      const dialogWidth = Math.max(720, width - 56);
+      const dialogHeight = 188;
+      const dialogX = (width - dialogWidth) / 2;
+      const dialogY = height - dialogHeight - 24;
+
+      this.dialogBox.setPosition(dialogX, dialogY);
+      this.dialogBox.setSize(dialogWidth, dialogHeight);
+      this.dialogSpeaker.setPosition(dialogX + 20, dialogY + 18);
+      this.dialogText.setPosition(dialogX + 20, dialogY + 44);
+      this.dialogText.setWordWrapWidth(dialogWidth - 40);
+      this.dialogHint.setPosition(dialogX + 20, dialogY + dialogHeight - 26);
+
+      this.optionTexts.forEach((text, index) => {
+        text.setPosition(dialogX + 20, dialogY + 104 + index * 28);
+      });
     }
 
     createInputs() {
@@ -651,8 +679,10 @@
       if (page.options?.length) {
         this.dialogHint.setText('UP/DOWN o click para elegir, ENTER para confirmar');
         page.options.forEach((option, index) => {
+          const optionX = this.dialogBox.x + 20;
+          const optionY = this.dialogBox.y + 104 + index * 28;
           const text = this.add
-            .text(560, 392 + index * 30, '', {
+            .text(optionX, optionY, '', {
               fontFamily: '"IBM Plex Mono", monospace',
               fontSize: '13px',
               color: '#d7ffe2',
